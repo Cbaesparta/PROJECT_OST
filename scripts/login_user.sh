@@ -1,8 +1,7 @@
 #!/bin/bash
 # Implements user login authentication for the backend.
-# It queries the database and exits with 0 on success or 1 on failure.
-#
-# Usage: ./scripts/login_user.sh <username> <password>
+# It queries the database, and on success, prints the "user_id,role"
+# and exits with 0. On failure, it exits with 1.
 
 # --- Configuration ---
 DB_FILE="railway.db"
@@ -19,17 +18,20 @@ USERNAME="$1"
 PASSWORD="$2"
 
 # --- Query Database to Verify Credentials ---
-# We select the user_id to check for existence.
-# In a real system, the password would be hashed and compared securely.
-user_data=$(sqlite3 "$DB_FILE" "SELECT user_id FROM users WHERE username = '$USERNAME' AND password_hash = '$PASSWORD';")
+# We select the user_id and role to check for existence and to return on success.
+# The output from sqlite3 will be like "2|passenger"
+user_data=$(sqlite3 "$DB_FILE" "SELECT user_id, role FROM users WHERE username = '$USERNAME' AND password_hash = '$PASSWORD';")
 
 # --- Check Result and Exit ---
 if [ -z "$user_data" ]; then
-    # If the query returned nothing (the variable is empty), the login is invalid.
+    # If the query returned nothing, the login is invalid.
+    # The error message goes to stderr so the menu doesn't see it.
     echo "Error: Invalid username or password." >&2
     exit 1 # Exit with failure status
 else
-    # If the query returned a user_id, the login is successful.
-    echo "Login successful."
+    # If the query returned data, the login is successful.
+    # Print the user_id and role, replacing the '|' from sqlite with a comma.
+    # This is the data the menu.sh script is expecting.
+    echo "$user_data" | tr '|' ','
     exit 0 # Exit with success status
 fi
