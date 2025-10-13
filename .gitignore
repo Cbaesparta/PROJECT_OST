@@ -1,0 +1,35 @@
+# Ignore database file
+railway.db
+*.db
+*.sqlite
+*.sqlite3
+
+# Ignore compiled scripts or temporary files
+*.swp
+*.tmp
+*.bak
+*.log
+
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# Ignore Python cache (if any)
+__pycache__/
+*.pyc
+
+# Ignore editor/IDE files
+.vscode/
+.idea/
+*.iml
+
+# Ignore node_modules if using Node.js (optional)
+node_modules/
+
+# Ignore environment files (if any)
+.env
+
+# Ignore archives or package files
+*.zip
+*.tar.gz
+*.tar
