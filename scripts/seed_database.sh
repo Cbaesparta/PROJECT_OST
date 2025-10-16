@@ -1,7 +1,7 @@
 #!/bin/bash
 # This script seeds the database with sample data for testing.
 # It should be run after 'database_setup.sh'.
-# It clears previous sample data (except for the admin user) before inserting new data.
+# This version includes users, trains, schedules, and sample bookings.
 
 # --- Configuration ---
 DB_FILE="railway.db"
@@ -17,7 +17,6 @@ echo "Seeding database '$DB_FILE' with sample data..."
 
 # --- Clear Existing Sample Data ---
 # This prevents duplicating data if the script is run multiple times.
-# It carefully preserves the 'admin' user created during initial setup.
 sqlite3 "$DB_FILE" <<'EOF'
 DELETE FROM trains;
 DELETE FROM schedules;
@@ -30,7 +29,6 @@ EOF
 echo "Cleared existing sample data."
 
 # --- Insert New Sample Data ---
-# Using a heredoc to pass multiple SQL commands to sqlite3.
 sqlite3 "$DB_FILE" <<'EOF'
 
 -- Insert Sample Passenger Users
@@ -45,34 +43,33 @@ INSERT INTO trains (train_number, train_name, source_station, dest_station) VALU
 ('11077', 'Jhelum Express', 'Pune', 'Jammu Tawi');
 
 -- Insert Sample Schedules
--- Note: train_id will be 1, 2, 3 based on the insertion order above.
--- Schedules for Azad Hind Express (train_id = 1)
-INSERT INTO schedules (train_id, station_name, arrival_time, departure_time, sleeper_seats, ac_seats) VALUES
-(1, 'Pune', NULL, '18:45', 150, 75),
-(1, 'Daund', '19:50', '19:55', 150, 75),
-(1, 'Manmad', '00:15', '00:20', 150, 75),
-(1, 'Nagpur', '09:50', '09:55', 150, 75),
-(1, 'Howrah', '03:55', NULL, 150, 75);
+-- train_id will be 1, 2, 3 based on insertion order.
+INSERT INTO schedules (train_id, station_name, sleeper_seats, ac_seats) VALUES
+(1, 'Pune', 150, 75),
+(2, 'Pune', 120, 60),
+(3, 'Pune', 200, 100);
 
--- Schedules for Pune-Bhubaneswar Express (train_id = 2)
-INSERT INTO schedules (train_id, station_name, arrival_time, departure_time, sleeper_seats, ac_seats) VALUES
-(2, 'Pune', NULL, '22:25', 120, 60),
-(2, 'Solapur', '02:20', '02:25', 120, 60),
-(2, 'Secunderabad', '08:15', '08:30', 120, 60),
-(2, 'Bhubaneswar', '04:15', NULL, 120, 60);
+-- #############################################################
+-- ## NEW: Insert Sample Bookings for John and Jane           ##
+-- #############################################################
 
--- Schedules for Jhelum Express (train_id = 3)
-INSERT INTO schedules (train_id, station_name, arrival_time, departure_time, sleeper_seats, ac_seats) VALUES
-(3, 'Pune', NULL, '17:20', 200, 100),
-(3, 'Bhopal', '08:25', '08:35', 200, 100),
-(3, 'New Delhi', '19:50', '20:05', 200, 100),
-(3, 'Jammu Tawi', '05:00', NULL, 200, 100);
+-- Booking 1: A confirmed AC ticket for John on the Azad Hind Express
+INSERT INTO bookings (pnr_number, user_id, train_id, travel_date, from_station, to_station, seat_class, status) VALUES
+('20251020-84321', (SELECT user_id FROM users WHERE username = 'john'), (SELECT train_id FROM trains WHERE train_number = '12130'), '2025-10-20', 'Pune', 'Howrah', 'ac', 'CONFIRMED');
+
+-- Booking 2: A cancelled Sleeper ticket for John on the Jhelum Express
+INSERT INTO bookings (pnr_number, user_id, train_id, travel_date, from_station, to_station, seat_class, status) VALUES
+('20251105-19874', (SELECT user_id FROM users WHERE username = 'john'), (SELECT train_id FROM trains WHERE train_number = '11077'), '2025-11-05', 'Pune', 'Jammu Tawi', 'sleeper', 'CANCELLED');
+
+-- Booking 3: A confirmed Sleeper ticket for Jane on the Pune-Bhubaneswar Express
+INSERT INTO bookings (pnr_number, user_id, train_id, travel_date, from_station, to_station, seat_class, status) VALUES
+('20251215-55432', (SELECT user_id FROM users WHERE username = 'jane'), (SELECT train_id FROM trains WHERE train_number = '22881'), '2025-12-15', 'Pune', 'Bhubaneswar', 'sleeper', 'CONFIRMED');
 
 EOF
 
 # --- Check Command Success ---
 if [ $? -eq 0 ]; then
-    echo "Database successfully seeded with sample data."
+    echo "Database successfully seeded with sample data, including bookings."
     exit 0
 else
     echo "Error: Failed to seed database." >&2
